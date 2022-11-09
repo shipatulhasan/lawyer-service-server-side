@@ -1,5 +1,6 @@
 const express = require('express')
 const cors = require('cors')
+var jwt = require('jsonwebtoken')
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const port = process.env.PORT || 5000
 const app = express()
@@ -17,11 +18,43 @@ app.get('/', (req,res)=>{
 // mongdb
 
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.0vh6mry.mongodb.net/?retryWrites=true&w=majority`;
+
+// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.0vh6mry.mongodb.net/?retryWrites=true&w=majority`;
+
+
+const uri = `mongodb+srv://${process.env.DEMO_USER}:${process.env.DEMO_PASS}@cluster0.0vh6mry.mongodb.net/test`
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+const run = async()=>{
+    
+    try{
+        const servicesCollection = client.db("lawyerDb").collection("services");
 
+        app.get('/services', async(req,res)=>{
+
+            const query = {}
+            const limit = parseInt(req.query.limit)
+
+            const cursor = servicesCollection.find(query).sort({_id:-1})
+
+            const result = await cursor.limit(limit).toArray()
+            res.send(result)
+        })
+
+        
+
+
+
+
+
+    }
+    finally{
+
+    }
+
+}
+run().catch(console.dir)
 
 
 
@@ -30,14 +63,6 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 
 app.listen(port,()=>{
-
-    client.connect(err => {
-        // const collection = client.db("test").collection("devices");
-        console.log('connected to mongodb')
-        // perform actions on the collection object
-        client.close();
-      });
-
 
     console.log(`listing from ${port}`)
 })
