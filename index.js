@@ -30,6 +30,7 @@ const run = async()=>{
     
     try{
         const servicesCollection = client.db("lawyerDb").collection("services");
+        const reviewCollection = client.db("lawyerDb").collection("reviews");
 
         app.get('/services', async(req,res)=>{
 
@@ -49,7 +50,24 @@ const run = async()=>{
 
             const result = await servicesCollection.findOne(query)
 
+            
+            res.send(result)
+        })
+
+        // Review
+
+        app.post('/review',async(req,res)=>{
+            const comment = req.body
+            const result = await reviewCollection.insertOne(comment)
+            res.send(result)
             console.log(result)
+        })
+
+        app.get('/review/:id',async(req,res)=>{
+            const id = req.params.id
+            const query = {service_id:id}
+            const cursor = reviewCollection.find(query).sort({_id:-1})
+            const result = await cursor.toArray()
             res.send(result)
         })
 
