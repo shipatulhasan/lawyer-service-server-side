@@ -33,9 +33,9 @@ const varifyJWT = (req,res,next)=>{
 
 // mongdb
 
-// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.0vh6mry.mongodb.net/?retryWrites=true&w=majority`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.0vh6mry.mongodb.net/?retryWrites=true&w=majority`;
 
-const uri = `mongodb+srv://${process.env.DEMO_USER}:${process.env.DEMO_PASS}@cluster0.0vh6mry.mongodb.net/test`;
+// const uri = `mongodb+srv://${process.env.DEMO_USER}:${process.env.DEMO_PASS}@cluster0.0vh6mry.mongodb.net/test`;
 
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
@@ -68,6 +68,12 @@ const run = async () => {
       res.send(result);
     });
 
+    app.post('/service',async(req,res)=>{
+      const service = req.body
+      const result = await servicesCollection.insertOne(service)
+      res.send(result)
+    })
+
 
     app.post('/jwt',async(req,res)=>{
       const user = req.body
@@ -81,7 +87,7 @@ const run = async () => {
       const comment = req.body;
       const result = await reviewCollection.insertOne(comment);
       res.send(result);
-      console.log(result);
+      
     });
     app.get("/review",varifyJWT, async (req, res) => {
 
