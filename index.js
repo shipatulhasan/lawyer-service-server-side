@@ -35,7 +35,6 @@ const varifyJWT = (req,res,next)=>{
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.0vh6mry.mongodb.net/?retryWrites=true&w=majority`;
 
-// const uri = `mongodb+srv://${process.env.DEMO_USER}:${process.env.DEMO_PASS}@cluster0.0vh6mry.mongodb.net/test`;
 
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
@@ -77,7 +76,7 @@ const run = async () => {
 
     app.post('/jwt',async(req,res)=>{
       const user = req.body
-      const token = jwt.sign(user,process.env.ACCESS_TOKEN_SECRET, {expiresIn:'1h'})
+      const token = jwt.sign(user,process.env.ACCESS_TOKEN_SECRET, {expiresIn:'10d'})
       res.send({token})
     })
 
