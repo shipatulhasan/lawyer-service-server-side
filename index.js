@@ -1,10 +1,10 @@
 const express = require("express");
 const cors = require("cors");
-var jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 5000;
 const app = express();
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
 
 app.use(cors());
 app.use(express.json());
@@ -12,6 +12,24 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.send("Hello bubu from node");
 });
+
+
+const varifyJWT = (req,res,next)=>{
+  const authHeader = req.headers.authorization
+  if(!authHeader){
+    return res.status(401).send({message:'unauthorized access'})
+  }
+  const token = authHeader.split(' ')[1]
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=>{
+    if(err){
+      return res.status(401).send({message:'unauthorized access'})
+    }
+    req.decoded = decoded
+    next()
+  })
+  
+}
 
 // mongdb
 
@@ -50,6 +68,13 @@ const run = async () => {
       res.send(result);
     });
 
+
+    app.post('/jwt',async(req,res)=>{
+      const user = req.body
+      const token = jwt.sign(user,process.env.ACCESS_TOKEN_SECRET, {expiresIn:'1h'})
+      res.send({token})
+    })
+
     // Review
 
     app.post("/review", async (req, res) => {
@@ -58,8 +83,16 @@ const run = async () => {
       res.send(result);
       console.log(result);
     });
-    app.get("/review", async (req, res) => {
+    app.get("/review",varifyJWT, async (req, res) => {
+
+      const decoded = req.decoded
+      const verification = decoded.currentUser
       const email = req.query.email;
+
+      if(verification.email!== email){
+        return res.status(403).send({message:'forbidden'})
+      }
+
       const query = {email:email}
       const cursor = reviewCollection.find(query);
       const result = await cursor.toArray()
