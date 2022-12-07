@@ -14,7 +14,7 @@ app.get("/", (req, res) => {
 });
 
 
-const varifyJWT = (req,res,next)=>{
+const verifyJWT = (req,res,next)=>{
   const authHeader = req.headers.authorization
   if(!authHeader){
     return res.status(401).send({message:'unauthorized access'})
@@ -46,6 +46,38 @@ const run = async () => {
   try {
     const servicesCollection = client.db("lawyerDb").collection("services");
     const reviewCollection = client.db("lawyerDb").collection("reviews");
+    const usersCollection = client.db("lawyerDb").collection("users");
+
+    const verifyAdmin = async(req,res,next)=>{
+      const decodedEmail = req.decoded.email
+      const user = await usersCollection.findOne({email:decodedEmail})
+      if(user?.role !== 'admin'){
+        return res.status(401).send({message:'unauthorized'})
+      }
+      next()
+    }
+
+    app.put('/user',async(req,res)=>{
+      const email = req.query.email
+      const query = {email:email}
+      const user = req.body
+      const options = { upsert: true }
+      const updateDoc = {
+        $set:user
+      }
+      const result = await usersCollection.updateOne(query,updateDoc,options)
+      console.log(result)
+      res.send(result)
+    })
+
+    app.get('/user/:email',async(req,res)=>{
+      const email = req.params.email
+      const filter = {email:email}
+      const user = await usersCollection.findOne(filter)
+      res.send(user)
+
+
+    })
 
     app.get("/services", async (req, res) => {
       const query = {};
@@ -88,18 +120,21 @@ const run = async () => {
       res.send(result);
       
     });
-    app.get("/review",varifyJWT, async (req, res) => {
+
+
+   
+
+    app.get("/review",verifyJWT, async (req, res) => {
 
       const decoded = req.decoded
-      const verification = decoded.currentUser
       const email = req.query.email;
 
-      if(verification.email!== email){
+      if(decoded.email!== email){
         return res.status(403).send({message:'forbidden'})
       }
 
       const query = {email:email}
-      const cursor = reviewCollection.find(query);
+      const cursor = reviewCollection.find(query).sort({_id:-1});
       const result = await cursor.toArray()
       res.send(result);
       
@@ -130,6 +165,31 @@ const run = async () => {
       const id = req.params.id
       const query = {_id:ObjectId(id)}
       const result = await reviewCollection.deleteOne(query)
+      res.send(result)
+    })
+
+
+    // admin route
+
+    app.get('/user',async(req,res)=>{
+      const role = req.query.role
+      const query = {role:role}
+      const result = await usersCollection.find(query).toArray()
+      res.send(result)
+    })
+    app.delete('/user/:id',async(req,res)=>{
+      const id = req.params.id
+      const query = {_id:ObjectId(id)}
+      const user = await usersCollection.findOne(query)
+      console.log(user)
+      const filter = {email:user?.email}
+      const deleteReview = await reviewCollection.deleteMany(filter)
+      const result = await usersCollection.deleteOne(query)
+      console.log(deleteReview)
+      res.send(result)
+    })
+    app.get('/all-reviews',verifyJWT,verifyAdmin,async(req,res)=>{
+      const result = await reviewCollection.find({ }).toArray()
       res.send(result)
     })
 
